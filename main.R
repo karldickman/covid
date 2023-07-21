@@ -47,5 +47,9 @@ plot <- function (data) {
 }
 
 main <- function () {
-  read() %>% plot()
+  data <- read()
+  data %>%
+    group_by(risk_level) %>%
+    summarise(last_date = max(date))
+  plot(data)
 }
