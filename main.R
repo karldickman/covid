@@ -43,11 +43,12 @@ plot <- function (data, log_scale) {
     geom_hline(yintercept = breaks) +
     scale_y_continuous(trans = ifelse(log_scale, "log10", "identity")) +
     scale_color_manual(
-      name = "Case rate",
+      name = "Risk level (cases/100k)",
       values = c("#a4c96f", "#f0c300", "#ff8000", "#e13220", "#930d6e")
     ) +
     geom_line(color = "black") +
     geom_point() +
+    ggtitle(label = 'Rates of laboratory-confirmed COVID-19-associated hospitalization', sub = 'From CDC COVID-NET surveillance data in Oregon') +
     xlab('Date') +
     ylab(paste('Weekly cases per 100k people', ifelse(log_scale, "(log scale)", "")))
 }
