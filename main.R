@@ -37,10 +37,11 @@ read <- function () {
     bin.risk.levels()
 }
 
-plot <- function (data) {
+plot <- function (data, log_scale) {
   data %>%
     ggplot(aes(x = date, y = weekly_rate, col = risk_level)) +
     geom_hline(yintercept = breaks) +
+    scale_y_continuous(trans = ifelse(log_scale, "log10", "identity")) +
     scale_color_manual(
       name = "Case rate",
       values = c("#a4c96f", "#f0c300", "#ff8000", "#e13220", "#930d6e")
@@ -48,14 +49,15 @@ plot <- function (data) {
     geom_line(color = "black") +
     geom_point() +
     xlab('Date') +
-    ylab('Weekly cases per 100k people')
+    ylab(paste('Weekly cases per 100k people', ifelse(log_scale, "(log scale)", "")))
 }
 
-main <- function () {
+main <- function (argv = c()) {
+  log_scale <- "--log" %in% argv
   data <- read()
   last_dates <- data %>%
     group_by(risk_level) %>%
     summarise(last_date = max(date))
   print(last_dates)
-  plot(data)
+  plot(data, log_scale)
 }
