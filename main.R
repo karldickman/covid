@@ -4,14 +4,19 @@ library(lubridate)
 library(readr)
 library(stringr)
 
-breaks <- c(0, 0.5, 1.5, 2.5, 4.5)
+breaks <- c(0, 0.5625, 1.125, 2.25, 4.5)
 
 bin.risk.levels <- function (data) {
   data %>%
     mutate(risk_level = cut(
       data$weekly_rate,
       breaks = c(breaks, Inf),
-      labels = c("Low", "Medium", "High", "Very High", "Extremely High")
+      labels = c(
+        "Low (< 0.56)",
+        "Medium (< 1.13)",
+        "High (< 2.25)",
+        "Very High (< 4.5)",
+        "Extremely High (> 4.5)")
     ))
 }
 
