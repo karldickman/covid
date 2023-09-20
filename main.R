@@ -27,14 +27,30 @@ read <- function () {
       & `AGE CATEGORY` == 'Overall'
       & SEX == 'Overall'
       & RACE == 'Overall'
-      & `WEEKLY RATE` != 'null'
     ) %>%
     transmute(
       date = as.Date(paste0(`MMWR-YEAR`, str_pad(`MMWR-WEEK` - 1, 2, pad = "0"), "0"), "%Y%U%w") + 6 + 7,
       `WEEKLY RATE`,
       weekly_rate = as.numeric(`WEEKLY RATE`)
     ) %>%
+    filter(date < as.Date("2024-01-01", "%Y-%m-%d")) %>%
     bin.risk.levels()
+}
+
+extrapolate <- function (data) {
+  num.weeks <- 4
+  valid.data <- filter(data, !is.na(weekly_rate))
+  last.month <- valid.data[(nrow(valid.data) - 1):(nrow(valid.data) - num.weeks),] %>%
+    mutate(log_weekly_rate = log(weekly_rate))
+  model <- lm(log_weekly_rate ~ date, data = last.month)
+  b <- model$coefficients[[1]]
+  m <- model$coefficients[[2]]
+  data %>%
+    mutate(extrapolated = ifelse(
+      date < last.month$date[[1]],
+      NA,
+      exp(m * as.numeric(date) + b))) %>%
+    mutate(extrapolated = ifelse(extrapolated > max(valid.data$weekly_rate), NA, extrapolated))
 }
 
 plot <- function (data, log_scale) {
@@ -49,6 +65,7 @@ plot <- function (data, log_scale) {
     ) +
     geom_line(color = "black") +
     geom_point() +
+    geom_line(aes(y = extrapolated), color = "black", linetype = "dashed") +
     ggtitle(label = 'Rates of laboratory-confirmed COVID-19-associated hospitalization', sub = 'From CDC COVID-NET surveillance data in Oregon') +
     xlab('Week ending') +
     ylab(paste('Weekly cases per 100k people', ifelse(log_scale, "(log scale)", ""))) +
@@ -61,8 +78,10 @@ main <- function (argv = c()) {
   log_scale <- "--log" %in% argv
   data <- read()
   last_dates <- data %>%
+    filter(!is.na(weekly_rate)) %>%
     group_by(risk_level) %>%
     summarise(last_date = max(date))
   print(last_dates)
+  data <- extrapolate(data)
   plot(data, log_scale)
 }
