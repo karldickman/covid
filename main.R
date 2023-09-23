@@ -20,20 +20,18 @@ bin.risk.levels <- function (data) {
     ))
 }
 
-read <- function () {
-  read_csv("COVID-19Surveillance_All_Data.csv") %>%
+read <- function() {
+  read_csv("Weekly_Rates_of_Laboratory-Confirmed_COVID-19_Hospitalizations_from_the_COVID-NET_Surveillance_System.csv") %>%
     filter(
-      CATCHMENT == 'Oregon'
-      & `AGE CATEGORY` == 'Overall'
-      & SEX == 'Overall'
-      & RACE == 'Overall'
+      State == "Oregon"
+      & `Age Category` == "Overall"
+      & `Sex` == "Overall"
+      & Race == "Overall"
     ) %>%
     transmute(
-      date = as.Date(paste0(`MMWR-YEAR`, str_pad(`MMWR-WEEK` - 1, 2, pad = "0"), "0"), "%Y%U%w") + 6 + 7,
-      `WEEKLY RATE`,
-      weekly_rate = as.numeric(`WEEKLY RATE`)
+      date = as.Date(`Week ending date`, "%m/%d/%Y"),
+      weekly_rate = Rate
     ) %>%
-    filter(date < as.Date("2024-01-01", "%Y-%m-%d")) %>%
     bin.risk.levels()
 }
 
