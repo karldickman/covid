@@ -4,7 +4,7 @@ library(lubridate)
 library(readr)
 library(stringr)
 
-breaks <- c(0, 0.5625, 1.125, 2.25, 4.5)
+breaks <- c(0, 0.5625, 1.125, 2.25, 4.5, 9)
 
 bin.risk.levels <- function (data) {
   data %>%
@@ -16,7 +16,8 @@ bin.risk.levels <- function (data) {
         "Medium (< 1.13)",
         "High (< 2.25)",
         "Very High (< 4.5)",
-        "Extremely High (> 4.5)")
+        "Extremely High (< 9)",
+        "Ludicrously High (> 9)")
     ))
 }
 
@@ -54,12 +55,12 @@ extrapolate <- function (data) {
 plot <- function (data, log_scale) {
   data %>%
     ggplot(aes(x = date, y = weekly_rate, col = risk_level)) +
-    geom_hline(yintercept = breaks) +
+    geom_hline(yintercept = breaks, color = "#bbbbbb") +
     scale_x_date(date_breaks = "1 month", date_labels = "%Y-%m") +
     scale_y_continuous(trans = ifelse(log_scale, "log10", "identity")) +
     scale_color_manual(
       name = "Risk level (cases/100k)",
-      values = c("#a4c96f", "#f0c300", "#ff8000", "#e13220", "#930d6e")
+      values = c("#a4c96f", "#f0c300", "#ff8000", "#e13220", "#930d6e", "black")
     ) +
     geom_line(color = "black") +
     geom_point() +
