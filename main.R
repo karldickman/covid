@@ -25,9 +25,9 @@ read <- function() {
   read_csv("Weekly_Rates_of_Laboratory-Confirmed_COVID-19_Hospitalizations_from_the_COVID-NET_Surveillance_System.csv") %>%
     filter(
       State == "Oregon"
-      & `Age Category` == "Overall"
-      & `Sex` == "Overall"
-      & Race == "Overall"
+      & `Age Category` == "All"
+      & `Sex` == "All"
+      & Race == "All"
     ) %>%
     transmute(
       date = as.Date(`Week ending date`, "%m/%d/%Y"),
