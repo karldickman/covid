@@ -37,6 +37,7 @@ read <- function() {
 }
 
 extrapolate <- function (data) {
+  last.date <- max(filter(data, date < max(data$date))$date)
   num.weeks <- 4
   valid.data <- filter(data, !is.na(weekly_rate))
   last.month <- valid.data[(nrow(valid.data) - 1):(nrow(valid.data) - num.weeks),] %>%
@@ -44,7 +45,13 @@ extrapolate <- function (data) {
   model <- lm(log_weekly_rate ~ date, data = last.month)
   b <- model$coefficients[[1]]
   m <- model$coefficients[[2]]
+  future <- tibble(
+    date = last.date + c(7, 14, 21, 28),
+    weekly_rate = NA,
+    risk_level = NA
+  )
   data %>%
+    bind_rows(future) %>%
     mutate(extrapolated = ifelse(
       date < last.month$date[[1]],
       NA,
