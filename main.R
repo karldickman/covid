@@ -36,22 +36,19 @@ read <- function() {
     bin.risk.levels()
 }
 
-extrapolate <- function (data) {
+extrapolate <- function (data, num.weeks = 4) {
   last.date <- max(filter(data, date < max(data$date))$date)
-  num.weeks <- 4
   valid.data <- filter(data, !is.na(weekly_rate))
   last.month <- valid.data[(nrow(valid.data) - 1):(nrow(valid.data) - num.weeks),] %>%
     mutate(log_weekly_rate = log(weekly_rate))
   model <- lm(log_weekly_rate ~ date, data = last.month)
   b <- model$coefficients[[1]]
   m <- model$coefficients[[2]]
-  future <- tibble(
-    date = last.date + c(7, 14, 21, 28),
+  tibble(
+    date = last.date + c(0, 7, 14, 21, 28),
     weekly_rate = NA,
     risk_level = NA
-  )
-  data %>%
-    bind_rows(future) %>%
+  ) %>%
     mutate(extrapolated = ifelse(
       date < last.month$date[[1]],
       NA,
@@ -59,7 +56,7 @@ extrapolate <- function (data) {
     mutate(extrapolated = ifelse(extrapolated > max(valid.data$weekly_rate), NA, extrapolated))
 }
 
-plot <- function (data, log_scale) {
+plot <- function (data, future, log_scale) {
   data %>%
     ggplot(aes(x = date, y = weekly_rate, col = risk_level)) +
     geom_hline(yintercept = breaks, color = "#bbbbbb") +
@@ -71,7 +68,7 @@ plot <- function (data, log_scale) {
     ) +
     geom_line(color = "black") +
     geom_point() +
-    geom_line(aes(y = extrapolated), color = "black", linetype = "dashed") +
+    geom_line(data = future, aes(y = extrapolated), color = "black", linetype = "dashed") +
     ggtitle(label = 'Rates of laboratory-confirmed COVID-19-associated hospitalization', sub = 'From CDC COVID-NET surveillance data in Oregon') +
     xlab('Week ending') +
     ylab(paste('Weekly cases per 100k people', ifelse(log_scale, "(log scale)", ""))) +
@@ -88,6 +85,6 @@ main <- function (argv = c()) {
     group_by(risk_level) %>%
     summarise(last_date = max(date))
   print(last_dates)
-  data <- extrapolate(data)
-  plot(data, log_scale)
+  future <- extrapolate(data)
+  plot(data, future, log_scale)
 }
