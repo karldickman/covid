@@ -7,18 +7,20 @@ library(stringr)
 breaks <- c(0, 0.5625, 1.125, 2.25, 4.5, 9)
 
 bin.risk.levels <- function (data) {
+  risk.levels <- cut(
+    data$weekly_rate,
+    breaks = c(breaks, Inf),
+    labels = c(
+      "Low (< 0.56)",
+      "Medium (< 1.13)",
+      "High (< 2.25)",
+      "Very High (< 4.5)",
+      "Extremely High (< 9)",
+      "Ludicrously High (> 9)")
+  )
+  levels(risk.levels) <- c(levels(risk.levels), "Incomplete")
   data %>%
-    mutate(risk_level = cut(
-      data$weekly_rate,
-      breaks = c(breaks, Inf),
-      labels = c(
-        "Low (< 0.56)",
-        "Medium (< 1.13)",
-        "High (< 2.25)",
-        "Very High (< 4.5)",
-        "Extremely High (< 9)",
-        "Ludicrously High (> 9)")
-    ))
+    mutate(risk_level = risk.levels)
 }
 
 read <- function() {
@@ -57,6 +59,10 @@ extrapolate <- function (data, num.weeks = 4) {
 }
 
 plot <- function (data, future, log_scale) {
+  # Last data point is incomplete
+  data <- cbind(data)
+  data[nrow(data),]$risk_level = "Incomplete"
+  complete.data <- data[1:(nrow(data) - 1),]
   data %>%
     ggplot(aes(x = date, y = weekly_rate, col = risk_level)) +
     geom_hline(yintercept = breaks, color = "#bbbbbb") +
@@ -64,9 +70,9 @@ plot <- function (data, future, log_scale) {
     scale_y_continuous(trans = ifelse(log_scale, "log10", "identity")) +
     scale_color_manual(
       name = "Risk level (cases/100k)",
-      values = c("#a4c96f", "#f0c300", "#ff8000", "#e13220", "#930d6e", "black")
+      values = c("#a4c96f", "#f0c300", "#ff8000", "#e13220", "#930d6e", "black", "#7f7f7f")
     ) +
-    geom_line(color = "black") +
+    geom_line(data = complete.data, color = "black") +
     geom_point() +
     geom_line(data = future, aes(y = extrapolated), color = "black", linetype = "dashed") +
     ggtitle(label = 'Rates of laboratory-confirmed COVID-19-associated hospitalization', sub = 'From CDC COVID-NET surveillance data in Oregon') +
