@@ -62,8 +62,8 @@ extrapolate <- function (data, num.weeks = 4) {
 plot <- function (data, future, log_scale) {
   # Last data point is incomplete
   data <- cbind(data)
-  data[nrow(data),]$risk_level = "Incomplete"
-  complete.data <- data[1:(nrow(data) - 1),]
+  data[(nrow(data) - 1):nrow(data),]$risk_level = "Incomplete"
+  complete.data <- data[1:(nrow(data) - 2),]
   data %>%
     ggplot(aes(x = date, y = weekly_rate, col = risk_level)) +
     geom_hline(yintercept = c(0, breaks), color = "#bbbbbb") +
