@@ -4,12 +4,12 @@ library(lubridate)
 library(readr)
 library(stringr)
 
-breaks <- c(0, 0.5625, 1.125, 2.25, 4.5, 9)
+breaks <- c(0.5625, 1.125, 2.25, 4.5, 9)
 
 bin.risk.levels <- function (data) {
   risk.levels <- cut(
     data$weekly_rate,
-    breaks = c(breaks, Inf),
+    breaks = c(-1, breaks, Inf),
     labels = c(
       "Low (< 0.56)",
       "Medium (< 1.13)",
@@ -27,14 +27,15 @@ read <- function() {
   read_csv("Weekly_Rates_of_Laboratory-Confirmed_COVID-19_Hospitalizations_from_the_COVID-NET_Surveillance_System.csv") %>%
     filter(
       State == "Oregon"
-      & `Age Category` == "All"
-      & `Sex` == "All"
-      & Race == "All"
+      & `AgeCategory_Legend` == "All"
+      & `Sex_Label` == "All"
+      & `Race_Label` == "All"
     ) %>%
     transmute(
-      date = as.Date(`Week ending date`, "%m/%d/%Y"),
-      weekly_rate = Rate
+      date = as.Date(`_WeekendDate`, "%m/%d/%Y"),
+      weekly_rate = WeeklyRate
     ) %>%
+    arrange(date) %>%
     bin.risk.levels()
 }
 
@@ -65,7 +66,7 @@ plot <- function (data, future, log_scale) {
   complete.data <- data[1:(nrow(data) - 1),]
   data %>%
     ggplot(aes(x = date, y = weekly_rate, col = risk_level)) +
-    geom_hline(yintercept = breaks, color = "#bbbbbb") +
+    geom_hline(yintercept = c(0, breaks), color = "#bbbbbb") +
     scale_x_date(date_breaks = "1 month", date_labels = "%Y-%m") +
     scale_y_continuous(trans = ifelse(log_scale, "log10", "identity")) +
     scale_color_manual(
