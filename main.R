@@ -42,7 +42,7 @@ read <- function() {
 extrapolate <- function (data, num.weeks = 4) {
   last.date <- max(filter(data, date < max(data$date))$date)
   valid.data <- filter(data, !is.na(weekly_rate))
-  last.month <- valid.data[(nrow(valid.data) - 1):(nrow(valid.data) - num.weeks),] %>%
+  last.month <- valid.data[(nrow(valid.data) - 2):(nrow(valid.data) - num.weeks - 1),] %>%
     mutate(log_weekly_rate = log(weekly_rate))
   model <- lm(log_weekly_rate ~ date, data = last.month)
   b <- model$coefficients[[1]]
