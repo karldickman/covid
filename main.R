@@ -84,7 +84,19 @@ plot <- function (data, future, log_scale) {
     )
 }
 
+usage <- function () {
+  cat("main.R [OPTIONS]\n")
+  cat("    -h, --help  Print this message and exit\n")
+  cat("    --log       Show graph on log scale\n")
+  opt <- options(show.error.messages = FALSE)
+  on.exit(options(opt))
+  stop()
+}
+
 main <- function (argv = c()) {
+  if ("-h" %in% argv | "--help" %in% argv) {
+    usage()
+  }
   log_scale <- "--log" %in% argv
   data <- read()
   last_dates <- data %>%
