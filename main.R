@@ -39,16 +39,16 @@ read <- function() {
     bin.risk.levels()
 }
 
-extrapolate <- function (data, num.weeks = 4) {
+extrapolate <- function (data, num.weeks) {
   last.date <- max(filter(data, date < max(data$date))$date)
   valid.data <- filter(data, !is.na(weekly_rate))
-  last.month <- valid.data[(nrow(valid.data) - 2):(nrow(valid.data) - num.weeks - 1),] %>%
+  last.month <- valid.data[nrow(valid.data) - num.weeks:nrow(valid.data),] %>%
     mutate(log_weekly_rate = log(weekly_rate))
   model <- lm(log_weekly_rate ~ date, data = last.month)
   b <- model$coefficients[[1]]
   m <- model$coefficients[[2]]
   tibble(
-    date = last.date + c(0, 7, 14, 21, 28),
+    date = last.date + (0:num.weeks) * 7,
     weekly_rate = NA,
     risk_level = NA
   ) %>%
@@ -59,11 +59,12 @@ extrapolate <- function (data, num.weeks = 4) {
     mutate(extrapolated = ifelse(extrapolated > max(valid.data$weekly_rate), NA, extrapolated))
 }
 
-plot <- function (data, future, log_scale) {
+plot <- function (data, future, log_scale, incomplete_weeks) {
   # Last data point is incomplete
   data <- cbind(data)
-  data[(nrow(data) - 1):nrow(data),]$risk_level = "Incomplete"
-  complete.data <- data[1:(nrow(data) - 2),]
+  last_complete_index = nrow(data) - incomplete_weeks
+  data[last_complete_index + 1:nrow(data),]$risk_level = "Incomplete"
+  complete.data <- data[1:last_complete_index,]
   data %>%
     ggplot(aes(x = date, y = weekly_rate, col = risk_level)) +
     geom_hline(yintercept = c(0, breaks), color = "#bbbbbb") +
@@ -103,7 +104,8 @@ main <- function (argv = c()) {
     filter(!is.na(weekly_rate)) %>%
     group_by(risk_level) %>%
     summarise(last_date = max(date))
-  print(last_dates)
-  future <- extrapolate(data)
-  plot(data, future, log_scale)
+  #print(last_dates)
+  incomplete_weeks <- 2
+  future <- extrapolate(slice(data, 1:(nrow(data) - incomplete_weeks)), incomplete_weeks + 4)
+  plot(data, future, log_scale, incomplete_weeks)
 }
