@@ -40,15 +40,15 @@ read <- function() {
 }
 
 extrapolate <- function (data, num.weeks) {
-  last.date <- max(filter(data, date < max(data$date))$date)
+  last.date <- pull(data, date) |> max()
   valid.data <- filter(data, !is.na(weekly_rate))
-  last.month <- valid.data[nrow(valid.data) - num.weeks:nrow(valid.data),] %>%
+  last.month <- valid.data[nrow(valid.data):(nrow(valid.data) - num.weeks + 1),] %>%
     mutate(log_weekly_rate = log(weekly_rate))
   model <- lm(log_weekly_rate ~ date, data = last.month)
   b <- model$coefficients[[1]]
   m <- model$coefficients[[2]]
   tibble(
-    date = last.date + (0:num.weeks) * 7,
+    date = last.date + (0:(num.weeks - 1)) * 7,
     weekly_rate = NA,
     risk_level = NA
   ) %>%
@@ -105,7 +105,7 @@ main <- function (argv = c()) {
     group_by(risk_level) %>%
     summarise(last_date = max(date))
   #print(last_dates)
-  incomplete_weeks <- 2
-  future <- extrapolate(slice(data, 1:(nrow(data) - incomplete_weeks)), incomplete_weeks + 4)
+  incomplete_weeks <- 1
+  future <- extrapolate(slice(data, 1:(nrow(data) - incomplete_weeks)), 4)
   plot(data, future, log_scale, incomplete_weeks)
 }
